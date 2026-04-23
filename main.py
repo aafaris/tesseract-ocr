@@ -1,10 +1,21 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Header
 from pytesseract import image_to_string, image_to_data, Output
 from PIL import Image
+from dotenv import load_dotenv
 import io
 import cv2
 import numpy as np
+import os
 from typing import Optional
+
+load_dotenv()
+
+API_KEY = os.getenv("API_KEY", "")
+
+
+def verify_api_key(x_api_key: str = Header(None)):
+    if not x_api_key or x_api_key != API_KEY:
+        raise HTTPException(status_code=401, detail="Unauthorized")
 
 app = FastAPI()
 
@@ -44,8 +55,11 @@ async def get_presets():
 @app.post("/ocr")
 async def perform_ocr(
     file: UploadFile = File(...),
+    x_api_key: str = Header(None),
     mode: str = "default",
 ):
+    if not x_api_key or x_api_key != API_KEY:
+        raise HTTPException(status_code=401, detail="Unauthorized")
     if mode not in PRESETS:
         raise HTTPException(
             status_code=400,
