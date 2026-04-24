@@ -3,12 +3,19 @@ from pytesseract import image_to_string, image_to_data, Output
 from PIL import Image
 from dotenv import load_dotenv
 import io
+import logging
 import cv2
 import numpy as np
 import os
 from typing import Optional
 
 load_dotenv()
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger("ocr-api")
 
 API_KEY = os.getenv("API_KEY", "")
 
@@ -60,6 +67,8 @@ async def perform_ocr(
 ):
     if not x_api_key or x_api_key != API_KEY:
         raise HTTPException(status_code=401, detail="Unauthorized")
+    logger.info(f"OCR request: file={file.filename}, mode={mode}")
+
     if mode not in PRESETS:
         raise HTTPException(
             status_code=400,
@@ -112,4 +121,7 @@ async def perform_ocr(
             },
         }
     except Exception as e:
+        logger.exception(f"OCR failed: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+    logger.info(f"OCR completed: mode={mode}, words={len(words)}, avg_confidence={stats['avg_confidence']:.2f}")

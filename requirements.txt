@@ -16,3 +16,4 @@ typing-inspection==0.4.2
 typing_extensions==4.15.0
 uvicorn==0.45.0
 opencv-python==4.10.0.84
+python-multipart==0.0.20
