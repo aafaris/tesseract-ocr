@@ -41,8 +41,22 @@ The API will be available at `http://localhost:8000`
 **Endpoint:** `POST /ocr`
 
 Upload an image file to extract text:
+
 ```bash
-curl -X POST -F "file=@image.png" http://localhost:8000/ocr
+curl -X POST http://localhost:8000/ocr \
+  -H "x-api-key: your-api-key" \
+  -F "file=@image.png"
 ```
 
-The API documentation is also available at `http://localhost:8000/docs
+Optional parameters:
+- `mode`: OCR preset (`default`, `ui`, `document`). Defaults to `default`.
+
+Example with custom mode:
+```bash
+curl -X POST http://localhost:8000/ocr \
+  -H "x-api-key: your-api-key" \
+  -F "file=@image.png" \
+  -F "mode=document"
+```
+
+The API documentation is also available at `http://localhost:8000/docs`
