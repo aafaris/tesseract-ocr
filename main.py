@@ -1,4 +1,5 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Header, Depends
+from fastapi import FastAPI, HTTPException, Depends, Request
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pytesseract import image_to_string, image_to_data, Output
 from PIL import Image
 from dotenv import load_dotenv
@@ -7,7 +8,7 @@ import logging
 import cv2
 import numpy as np
 import os
-from typing import Optional
+from secrets import compare_digest
 
 load_dotenv()
 
@@ -17,12 +18,21 @@ logging.basicConfig(
 )
 logger = logging.getLogger("ocr-api")
 
-API_KEY = os.getenv("API_KEY", "")
+BASIC_AUTH_USERNAME = os.getenv("BASIC_AUTH_USERNAME", "admin")
+BASIC_AUTH_PASSWORD = os.getenv("BASIC_AUTH_PASSWORD", "")
+
+security = HTTPBasic()
 
 
-def verify_api_key(x_api_key: str = Header(None)):
-    if not x_api_key or x_api_key != API_KEY:
-        raise HTTPException(status_code=401, detail="Unauthorized")
+def verify_basic_auth(credentials: HTTPBasicCredentials = Depends(security)):
+    if not compare_digest(credentials.username, BASIC_AUTH_USERNAME) or \
+       not compare_digest(credentials.password, BASIC_AUTH_PASSWORD):
+        raise HTTPException(
+            status_code=401,
+            detail="Unauthorized",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    return credentials.username
 
 app = FastAPI()
 
@@ -81,23 +91,14 @@ async def get_presets():
 
 @app.post("/ocr")
 async def perform_ocr(
-    file: UploadFile = File(...),
-    mode: str = "default",
-    _: str = Depends(verify_api_key)  # auth handled here
+    request: Request,
+    username: str = Depends(verify_basic_auth)
 ):
-    logger.info(f"OCR request: file={file.filename}, mode={mode}")
-
-    if mode not in PRESETS:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid mode: {mode}. Available: {list(PRESETS.keys())}",
-        )
-
-    if not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="Invalid file type")
+    mode = "document"
+    logger.info(f"OCR request: mode={mode}")
 
     try:
-        contents = await file.read()
+        contents = await request.body()
 
         # Normalize image
         image = Image.open(io.BytesIO(contents)).convert("RGB")

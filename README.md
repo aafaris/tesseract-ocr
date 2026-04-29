@@ -36,27 +36,24 @@ uvicorn main:app --reload
 
 The API will be available at `http://localhost:8000`
 
+## Environment Variables
+
+Set the following environment variables for authentication:
+
+- `BASIC_AUTH_USERNAME`: Username for Basic Auth (default: `admin`)
+- `BASIC_AUTH_PASSWORD`: Password for Basic Auth
+
 ## API Usage
 
 **Endpoint:** `POST /ocr`
 
-Upload an image file to extract text:
+Send binary image data to extract text using the "document" preset:
 
 ```bash
 curl -X POST http://localhost:8000/ocr \
-  -H "x-api-key: your-api-key" \
-  -F "file=@image.png"
-```
-
-Optional parameters:
-- `mode`: OCR preset (`default`, `ui`, `document`). Defaults to `default`.
-
-Example with custom mode:
-```bash
-curl -X POST http://localhost:8000/ocr \
-  -H "x-api-key: your-api-key" \
-  -F "file=@image.png" \
-  -F "mode=document"
+  -u username:password \
+  -H "Content-Type: image/png" \
+  --data-binary "@image.png"
 ```
 
 The API documentation is also available at `http://localhost:8000/docs`
